@@ -243,19 +243,30 @@
       var sp = num(el.getAttribute('data-float'), 1);
       var w = num(el.getAttribute('data-float-w'), 100) * FLOAT_SCALE;
       var r0 = num(el.getAttribute('data-float-r'), 0);
-      var spin = (i % 2 ? 1 : -1) * 40 * sp;
-      var start = (i * 0.8) % 6;
+      var spin = (i % 2 ? 1 : -1) * 60 * sp;
+      var D = 7.5 / (0.6 + 0.4 * sp); // timeline units for one pass bottom to top
+      var ph = (i * 0.618) % 1; // evenly scattered starting points along the path
       gsap.set(el, { left: num(el.getAttribute('data-float-x'), 50) + '%', width: w, xPercent: -50, autoAlpha: 1 });
-      tl.fromTo(
-        el,
-        { y: function () { return vh() + w * 0.2; }, rotation: r0 },
-        {
-          y: -w * 1.4,
-          rotation: r0 + spin,
-          duration: T - start
-        },
-        start
-      );
+      function yAt(prog) {
+        return function () {
+          return vh() + w * 0.2 - prog * (vh() + w * 1.6);
+        };
+      }
+      // constant-speed passes, always moving up; the first pass starts partway along
+      var t = 0;
+      var prog = ph;
+      while (t < T - 0.001) {
+        var len = Math.min(1 - prog, (T - t) / D);
+        var dur = len * D;
+        tl.fromTo(
+          el,
+          { y: yAt(prog), rotation: r0 + spin * prog },
+          { y: yAt(prog + len), rotation: r0 + spin * (prog + len), duration: dur, ease: 'none' },
+          t
+        );
+        t += dur;
+        prog = 0;
+      }
     });
 
     // scene 2: header and subheader leave
@@ -288,7 +299,7 @@
     function finalShift() {
       var h = vh();
       var H = ch + GAP + linkH + (list ? list.offsetHeight : 0);
-      return Math.min(0, h - 50 - H - (h / 2 - ch / 2));
+      return Math.min(0, h - 120 - H - (h / 2 - ch / 2));
     }
     chips.forEach(function (chip, i) {
       var at = chipTimes[i] !== undefined ? chipTimes[i] : 15.0 + (i - 2) * 2.8;
