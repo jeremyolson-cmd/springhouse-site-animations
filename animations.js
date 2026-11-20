@@ -303,8 +303,9 @@
     if (wire) tl.to(wire, { scaleY: 1, duration: 0.7 }, 8.7 + SHIFT);
     // chips: one at a time, each rises from below the screen and settles at full size
     // before the next starts; the stack steps up so each new chip has room
-    var chipTimes = [9.4 + SHIFT, 12.2 + SHIFT, 15.0 + SHIFT];
-    var CHIP_DUR = 1.3;
+    var CHIP_GAP = 2.0; // chips overlap slightly and the stack never stops, so the motion is continuous
+    var chipTimes = [9.4 + SHIFT, 9.4 + SHIFT + CHIP_GAP, 9.4 + SHIFT + CHIP_GAP * 2];
+    var CHIP_DUR = 2.4;
     var stack = list ? [cardsWrap, link, list] : [cardsWrap, link];
     function finalShift() {
       var h = vh();
@@ -312,21 +313,21 @@
       return Math.min(0, h - 120 - H - (h / 2 - ch / 2));
     }
     chips.forEach(function (chip, i) {
-      var at = chipTimes[i] !== undefined ? chipTimes[i] : 15.0 + SHIFT + (i - 2) * 2.8;
+      var at = chipTimes[i] !== undefined ? chipTimes[i] : chipTimes[2] + (i - 2) * CHIP_GAP;
       var frac = (i + 1) / chips.length;
-      // 1) the stack steps up while the previous chip sits still
+      // 1) the stack climbs steadily while this chip rises (constant speed, no stop between chips)
       tl.to(
         stack,
         {
           y: function () {
             return finalShift() * frac;
           },
-          duration: 0.9,
-          ease: 'power2.inOut'
+          duration: CHIP_GAP,
+          ease: 'none'
         },
-        at - 1.0
+        at
       );
-      // 2) this chip rises from below the screen into its place; nothing else moves
+      // 2) this chip rises from below the screen into its place, easing in just as the next begins
       tl.fromTo(
         chip,
         { y: function () { return vh() * 1.1; }, autoAlpha: 0 },
