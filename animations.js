@@ -1,6 +1,6 @@
 /*! springhouse-site-animations v0.1.0
  * GSAP + ScrollTrigger (+ SplitText) driven by data-* hooks on v2-* elements.
- * Hooks: data-parallax, data-float, data-fan, data-reveal (lines|fade|rise|pop), data-mask, data-draw, data-clip, data-scrub-video.
+ * Hooks: data-parallax, data-float, data-fan, data-reveal (lines|fade|rise|pop, add data-scrub to tie it to scroll), data-mask, data-draw, data-clip, data-scrub-video.
  * data-slider="pin" is owned by the vanilla slider script on the Refrigerator page; this file only
  * adds the data-clip wipes inside it and never touches slide transforms.
  */
@@ -27,6 +27,13 @@
 
   function all(sel) {
     return gsap.utils.toArray(sel);
+  }
+
+  // data-scrub on a reveal element ties it to scroll position instead of firing once.
+  function revealTrigger(el, onceStart, scrubStart, scrubEnd) {
+    return el.hasAttribute('data-scrub')
+      ? { trigger: el, start: scrubStart || 'top 95%', end: scrubEnd || 'top 62%', scrub: true }
+      : { trigger: el, start: onceStart, once: true };
   }
 
   function num(v, fallback) {
@@ -164,7 +171,7 @@
             y: 0,
             duration: 0.8,
             ease: 'power3.out',
-            scrollTrigger: { trigger: el, start: 'top 88%', once: true }
+            scrollTrigger: revealTrigger(el, 'top 88%')
           }
         );
         return;
@@ -180,7 +187,7 @@
             duration: 0.9,
             ease: 'power3.out',
             stagger: 0.08,
-            scrollTrigger: { trigger: el, start: 'top 88%', once: true }
+            scrollTrigger: revealTrigger(el, 'top 88%')
           });
         }
       });
@@ -195,14 +202,28 @@
           autoAlpha: 1,
           y: 0,
           duration: 0.8,
-          ease: 'power2.out',
-          scrollTrigger: { trigger: el, start: 'top 90%', once: true }
+          ease: el.hasAttribute('data-scrub') ? 'none' : 'power2.out',
+          scrollTrigger: revealTrigger(el, 'top 90%', 'top 98%', 'top 70%')
         }
       );
     });
 
     // rise (uses yPercent so it never fights data-parallax, which uses y)
-    var rise = all('[data-reveal="rise"]');
+    // data-scrub items slide up from below in step with the scroll (e.g. the inventory chips).
+    all('[data-reveal="rise"][data-scrub]').forEach(function (el) {
+      gsap.fromTo(
+        el,
+        { autoAlpha: 0, yPercent: 70 },
+        {
+          autoAlpha: 1,
+          yPercent: 0,
+          ease: 'none',
+          scrollTrigger: { trigger: el, start: 'top 100%', end: 'top 66%', scrub: true }
+        }
+      );
+    });
+
+    var rise = all('[data-reveal="rise"]:not([data-scrub])');
     if (rise.length) {
       gsap.set(rise, { autoAlpha: 0, yPercent: 8 });
       ScrollTrigger.batch(rise, {

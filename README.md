@@ -11,6 +11,7 @@ Scroll animations for the Springhouse marketing site (Webflow). GSAP, ScrollTrig
 | `data-mask` | `ellipse` | Scrubbed ellipse clip-path expand. |
 | `data-draw` | `true` | SVG stroke draw, or a div grows along its long axis. |
 | `data-clip` | any | Wipe inside the pinned slider, desktop only. |
+| `data-scrub` | `true` | Modifier for `data-reveal` `lines`, `fade` and `rise`: the reveal follows scroll position (and reverses) instead of firing once. |
 | `data-float` | speed (e.g. `1.2`) | Decorative image drifts down through its section while rotating. Higher speed travels faster and deeper. Companions: `data-float-x` (left %), `data-float-w` (px), `data-float-r` (start deg). Hidden by CSS until JS runs, so reduced motion never shows it. |
 | `data-fan` | `rot,xPercent,scale,z` | Scrubbed spread into an overlapping fan as the row scrolls in. Smaller screens keep half the rotation and no sideways shift. |
 | `data-scrub-video` | `<video>` | Scroll drives playback (forward down, reverse up). Desktop pins the section for 1.5 viewports; smaller screens scrub while passing; reduced motion shows the last frame. Encode with every frame a keyframe: `ffmpeg -i in.mp4 -an -c:v libx264 -g 1 -crf 24 -pix_fmt yuv420p -movflags +faststart out.mp4`. |
