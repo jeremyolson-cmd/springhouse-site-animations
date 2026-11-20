@@ -47,6 +47,15 @@
       v.muted = true;
       v.pause();
 
+      // Feather the edges into the page background (Webflow's style panel has no CSS mask support).
+      var feather =
+        'linear-gradient(to right, transparent 0%, #000 14%, #000 86%, transparent 100%), ' +
+        'linear-gradient(to bottom, transparent 0%, #000 14%, #000 86%, transparent 100%)';
+      v.style.webkitMaskImage = feather;
+      v.style.maskImage = feather;
+      v.style.webkitMaskComposite = 'source-in';
+      v.style.maskComposite = 'intersect';
+
       var started = false;
       var target = 0;
       var current = 0;
