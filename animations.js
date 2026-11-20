@@ -224,14 +224,17 @@
     if (dot) gsap.set(dot, { scale: 0 });
     if (wire) gsap.set(wire, { scaleY: 0, transformOrigin: 'center top' });
 
-    var T = 17.5;
+    // Food starts drifting early; the header and everything after it wait SHIFT longer so the food
+    // is already well up the screen when the copy starts to move.
+    var SHIFT = 1.6;
+    var T = 17.5 + SHIFT;
     var tl = gsap.timeline({
       defaults: { ease: 'none' },
       scrollTrigger: {
         trigger: sec,
         start: 'top top',
         end: function () {
-          return '+=' + Math.round(vh() * 6.2);
+          return '+=' + Math.round(vh() * 6.2 * (T / 17.5));
         },
         pin: true,
         anticipatePin: 1,
@@ -273,12 +276,12 @@
     });
 
     // scene 2: header and subheader leave
-    tl.to(title, { y: function () { return -vh() * 0.65; }, autoAlpha: 0, duration: 1.1, ease: 'power2.in' }, 3.4);
-    if (sub) tl.to(sub, { y: function () { return -vh() * 0.65; }, autoAlpha: 0, duration: 1.1, ease: 'power2.in' }, 3.55);
+    tl.to(title, { y: function () { return -vh() * 0.65; }, autoAlpha: 0, duration: 1.1, ease: 'power2.in' }, 3.4 + SHIFT);
+    if (sub) tl.to(sub, { y: function () { return -vh() * 0.65; }, autoAlpha: 0, duration: 1.1, ease: 'power2.in' }, 3.55 + SHIFT);
 
     // scene 3: the food cards appear one at a time, left to right, like being photographed
     cards.forEach(function (card, i) {
-      var at = 4.2 + i * 1.0;
+      var at = 4.2 + SHIFT + i * 1.0;
       tl.fromTo(
         card,
         { autoAlpha: 0, y: 50, scale: 0.85, filter: 'brightness(2.4)' },
@@ -292,15 +295,15 @@
     cards.forEach(function (card, i) {
       var p = card.getAttribute('data-fan').split(',').map(parseFloat);
       if (!isNaN(p[3])) gsap.set(card, { zIndex: p[3] });
-      tl.to(card, { rotation: tilts[i] !== undefined ? tilts[i] : 0, duration: 1.2, ease: 'power2.inOut' }, 7.0);
+      tl.to(card, { rotation: tilts[i] !== undefined ? tilts[i] : 0, duration: 1.2, ease: 'power2.inOut' }, 7.0 + SHIFT);
     });
 
     // scene 5: dot, wire, chips; the group rises so the chips fit
-    if (dot) tl.to(dot, { scale: 1, duration: 0.4, ease: 'back.out(2)' }, 8.5);
-    if (wire) tl.to(wire, { scaleY: 1, duration: 0.7 }, 8.7);
+    if (dot) tl.to(dot, { scale: 1, duration: 0.4, ease: 'back.out(2)' }, 8.5 + SHIFT);
+    if (wire) tl.to(wire, { scaleY: 1, duration: 0.7 }, 8.7 + SHIFT);
     // chips: one at a time, each rises from below the screen and settles at full size
     // before the next starts; the stack steps up so each new chip has room
-    var chipTimes = [9.4, 12.2, 15.0];
+    var chipTimes = [9.4 + SHIFT, 12.2 + SHIFT, 15.0 + SHIFT];
     var CHIP_DUR = 1.3;
     var stack = list ? [cardsWrap, link, list] : [cardsWrap, link];
     function finalShift() {
@@ -309,7 +312,7 @@
       return Math.min(0, h - 120 - H - (h / 2 - ch / 2));
     }
     chips.forEach(function (chip, i) {
-      var at = chipTimes[i] !== undefined ? chipTimes[i] : 15.0 + (i - 2) * 2.8;
+      var at = chipTimes[i] !== undefined ? chipTimes[i] : 15.0 + SHIFT + (i - 2) * 2.8;
       var frac = (i + 1) / chips.length;
       // 1) the stack steps up while the previous chip sits still
       tl.to(
