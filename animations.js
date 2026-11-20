@@ -227,7 +227,8 @@
     // Food starts drifting early; the header and everything after it wait SHIFT longer so the food
     // is already well up the screen when the copy starts to move.
     var SHIFT = 1.6;
-    var T = 17.5 + SHIFT;
+    // Ends 0.3 after the last chip lands (9.4 + SHIFT + 2 * 2.0 + 2.4) so the pin releases right away, no dead scroll.
+    var T = 9.4 + SHIFT + 4.0 + 2.4 + 0.3;
     var tl = gsap.timeline({
       defaults: { ease: 'none' },
       scrollTrigger: {
