@@ -31,4 +31,4 @@ Use `v2-*` classes only. Do not edit shared live classes.
 
 ## Release
 
-Tag each release (`v0.1.0`, ...) and pin that tag in the footer snippet. Avoid `@main` in production because jsDelivr caches branches.
+Pin the footer snippet to a release tag or full commit SHA (jsDelivr treats both as immutable). Avoid `@main` in production because jsDelivr caches branches.
