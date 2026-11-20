@@ -222,14 +222,14 @@
     if (dot) gsap.set(dot, { scale: 0 });
     if (wire) gsap.set(wire, { scaleY: 0, transformOrigin: 'center top' });
 
-    var T = 13;
+    var T = 15;
     var tl = gsap.timeline({
       defaults: { ease: 'none' },
       scrollTrigger: {
         trigger: sec,
         start: 'top top',
         end: function () {
-          return '+=' + Math.round(vh() * 4.6);
+          return '+=' + Math.round(vh() * 5.3);
         },
         pin: true,
         anticipatePin: 1,
@@ -248,11 +248,9 @@
       gsap.set(el, { left: num(el.getAttribute('data-float-x'), 50) + '%', width: w, xPercent: -50, autoAlpha: 1 });
       tl.fromTo(
         el,
-        { y: -w * 1.3, rotation: r0 },
+        { y: function () { return vh() + w * 0.2; }, rotation: r0 },
         {
-          y: function () {
-            return (vh() + w) * (0.55 + 0.5 * sp);
-          },
+          y: -w * 1.4,
           rotation: r0 + spin,
           duration: T - start
         },
@@ -282,42 +280,37 @@
     // scene 5: dot, wire, chips; the group rises so the chips fit
     if (dot) tl.to(dot, { scale: 1, duration: 0.4, ease: 'back.out(2)' }, 8.5);
     if (wire) tl.to(wire, { scaleY: 1, duration: 0.7 }, 8.7);
-    var chipTimes = [8.8, 9.8, 10.8];
+    // chips: one at a time, each rises from below the screen and settles at full size
+    // before the next starts; the stack steps up so each new chip has room
+    var chipTimes = [8.6, 10.4, 12.2];
+    var CHIP_DUR = 1.3;
+    var stack = list ? [cardsWrap, link, list] : [cardsWrap, link];
+    function finalShift() {
+      var h = vh();
+      var H = ch + GAP + linkH + (list ? list.offsetHeight : 0);
+      return Math.min(0, h - 50 - H - (h / 2 - ch / 2));
+    }
     chips.forEach(function (chip, i) {
+      var at = chipTimes[i] !== undefined ? chipTimes[i] : 12.2 + (i - 2) * 1.8;
       tl.fromTo(
         chip,
         { y: function () { return vh() * 1.1; }, autoAlpha: 0 },
-        { y: 0, autoAlpha: 1, duration: 1.7, ease: 'power2.out' },
-        chipTimes[i] || 10.8 + (i - 2) * 1.0
+        { y: 0, autoAlpha: 1, duration: CHIP_DUR, ease: 'power2.out' },
+        at
+      );
+      var frac = (i + 1) / chips.length;
+      tl.to(
+        stack,
+        {
+          y: function () {
+            return finalShift() * frac;
+          },
+          duration: CHIP_DUR,
+          ease: 'power2.inOut'
+        },
+        at
       );
     });
-    // everything shrinks into one stack that fits the viewport: cards, wire, chips below
-    var stack = list ? [cardsWrap, link, list] : [cardsWrap, link];
-    var offsets = [0, ch + GAP, ch + GAP + linkH];
-    function fit() {
-      var h = vh();
-      var H = ch + GAP + linkH + (list ? list.offsetHeight : 0);
-      return Math.min(1, (h - 90) / H);
-    }
-    gsap.set(stack, { transformOrigin: '50% 0' });
-    tl.to(
-      stack,
-      {
-        scale: function () {
-          return fit();
-        },
-        y: function (i) {
-          var h = vh();
-          var sc = fit();
-          var H = ch + GAP + linkH + (list ? list.offsetHeight : 0);
-          var top = (h - sc * H) / 2;
-          return top + sc * offsets[i] - (h / 2 - ch / 2 + offsets[i]);
-        },
-        duration: 2.4,
-        ease: 'power1.inOut'
-      },
-      9.6
-    );
     tl.to({}, { duration: 0.1 }, T - 0.1);
   }
 
@@ -487,11 +480,14 @@
       gsap.set(el, { left: num(el.getAttribute('data-float-x'), 50) + '%', width: w, xPercent: -50, autoAlpha: 1 });
       gsap.fromTo(
         el,
-        { y: -w * 1.2, rotation: r0 },
         {
           y: function () {
-            return trigger.offsetHeight * 0.9 * sp;
+            return trigger.offsetHeight * (0.7 + 0.25 * sp);
           },
+          rotation: r0
+        },
+        {
+          y: -w * 1.2,
           rotation: r0 + spin,
           ease: 'none',
           scrollTrigger: {
