@@ -25,8 +25,8 @@
   var hasSplit = !!window.SplitText;
   if (hasSplit) gsap.registerPlugin(window.SplitText);
 
-  function all(sel) {
-    return gsap.utils.toArray(sel);
+  function all(sel, root) {
+    return Array.prototype.slice.call((root || document).querySelectorAll(sel));
   }
 
   // data-scrub on a reveal element ties it to scroll position instead of firing once.
