@@ -253,8 +253,9 @@
         };
       }
       // constant-speed passes, always moving up; the first pass starts partway along
-      var t = 0;
-      var prog = ph;
+      // nothing on screen while the header settles; each piece then enters from the bottom in turn
+      var t = 1.4 + ph * D * 0.8;
+      var prog = 0;
       while (t < T - 0.001) {
         var len = Math.min(1 - prog, (T - t) / D);
         var dur = len * D;
