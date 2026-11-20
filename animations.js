@@ -203,9 +203,9 @@
       marginRight: 'auto',
       marginTop: 0,
       top: 'calc(50% - ' + ch / 2 + 'px)',
-      autoAlpha: 0
+      autoAlpha: 1
     });
-    gsap.set(cards, { autoAlpha: 1, yPercent: 0 });
+    gsap.set(cards, { autoAlpha: 0, yPercent: 0 });
     gsap.set(link, { position: 'absolute', left: 0, right: 0, marginTop: 0, top: 'calc(50% + ' + (ch / 2 + GAP) + 'px)' });
     if (list) {
       gsap.set(list, {
@@ -273,19 +273,23 @@
     tl.to(title, { y: function () { return -vh() * 0.65; }, autoAlpha: 0, duration: 1.1, ease: 'power2.in' }, 3.4);
     if (sub) tl.to(sub, { y: function () { return -vh() * 0.65; }, autoAlpha: 0, duration: 1.1, ease: 'power2.in' }, 3.55);
 
-    // scene 3: cards arrive, then hold while the food keeps moving
-    tl.fromTo(
-      cardsWrap,
-      { autoAlpha: 0, y: function () { return vh() * 0.5; } },
-      { autoAlpha: 1, y: 0, duration: 1.3, ease: 'power2.out' },
-      4.2
-    );
+    // scene 3: the food cards appear one at a time, left to right, like being photographed
+    cards.forEach(function (card, i) {
+      var at = 4.2 + i * 1.0;
+      tl.fromTo(
+        card,
+        { autoAlpha: 0, y: 50, scale: 0.85, filter: 'brightness(2.4)' },
+        { autoAlpha: 1, y: 0, scale: 1, filter: 'brightness(1)', duration: 0.8, ease: 'back.out(1.5)' },
+        at
+      );
+    });
 
-    // scene 4: fan
-    cards.forEach(function (card) {
+    // scene 4: a gentle tilt once all three are in (no overlap)
+    var tilts = [-5, 0, 5];
+    cards.forEach(function (card, i) {
       var p = card.getAttribute('data-fan').split(',').map(parseFloat);
       if (!isNaN(p[3])) gsap.set(card, { zIndex: p[3] });
-      tl.to(card, { rotation: p[0] || 0, xPercent: p[1] || 0, scale: p[2] || 1, duration: 1.4, ease: 'power2.inOut' }, 7.0);
+      tl.to(card, { rotation: tilts[i] !== undefined ? tilts[i] : 0, duration: 1.2, ease: 'power2.inOut' }, 7.0);
     });
 
     // scene 5: dot, wire, chips; the group rises so the chips fit
