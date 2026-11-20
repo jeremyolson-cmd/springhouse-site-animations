@@ -286,13 +286,27 @@
     chips.forEach(function (chip, i) {
       tl.to(chip, { autoAlpha: 1, y: 0, duration: 0.6, ease: 'power2.out' }, chipTimes[i] || 10.8 + i * 0.7);
     });
+    // everything shrinks into one stack that fits the viewport: cards, wire, chips below
+    var stack = list ? [cardsWrap, link, list] : [cardsWrap, link];
+    var offsets = [0, ch + GAP, ch + GAP + linkH];
+    function fit() {
+      var h = vh();
+      var H = ch + GAP + linkH + (list ? list.offsetHeight : 0);
+      return Math.min(1, (h - 90) / H);
+    }
+    gsap.set(stack, { transformOrigin: '50% 0' });
     tl.to(
-      list ? [cardsWrap, link, list] : [cardsWrap, link],
+      stack,
       {
-        y: function () {
+        scale: function () {
+          return fit();
+        },
+        y: function (i) {
           var h = vh();
-          var group = ch + GAP + linkH + (list ? list.offsetHeight : 0);
-          return Math.min(0, h - 50 - group - (h / 2 - ch / 2));
+          var sc = fit();
+          var H = ch + GAP + linkH + (list ? list.offsetHeight : 0);
+          var top = (h - sc * H) / 2;
+          return top + sc * offsets[i] - (h / 2 - ch / 2 + offsets[i]);
         },
         duration: 2.4,
         ease: 'power1.inOut'
