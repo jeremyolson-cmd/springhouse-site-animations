@@ -218,7 +218,7 @@
         top: 'calc(50% + ' + (ch / 2 + GAP + linkH) + 'px)'
       });
     }
-    gsap.set(chips, { autoAlpha: 0, yPercent: 0 });
+    gsap.set(chips, { autoAlpha: 0, yPercent: 0, zoom: 1, backgroundColor: '#ffffff' }); // all chips full size and solid so the food never shows through
     if (dot) gsap.set(dot, { scale: 0 });
     if (wire) gsap.set(wire, { scaleY: 0, transformOrigin: 'center top' });
 
