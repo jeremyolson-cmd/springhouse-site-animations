@@ -97,7 +97,7 @@
         tick = function () {
           var d = target - current;
           if (Math.abs(d) < 0.002) return;
-          current += d * 0.2;
+          current += d * (parseFloat(v.getAttribute('data-scrub-ease')) || 0.2);
           if (!v.seeking) v.currentTime = current;
         };
         gsap.ticker.add(tick);
@@ -111,7 +111,9 @@
                   return window.innerHeight >= host.offsetHeight ? 'bottom bottom' : 'top top';
                 },
                 end: function () {
-                  return '+=' + Math.round(window.innerHeight * 1.5);
+                  // data-scrub-length="N" sets the pin length in viewports (default 1.5). Longer = slower playback.
+                  var len = parseFloat(v.getAttribute('data-scrub-length')) || 1.5;
+                  return '+=' + Math.round(window.innerHeight * len);
                 },
                 pin: true,
                 anticipatePin: 1,
