@@ -169,7 +169,9 @@
     var cards = all('[data-fan]', cardsWrap);
     var dot = link.querySelector('.v2-sm-dot');
     var wire = link.querySelector('[data-draw]');
-    var chips = all('[data-reveal="rise"]', link);
+    var list = sec.querySelector('.v2-sm-list');
+    var chips = all('[data-reveal="rise"]', list || link);
+    var linkH = link.offsetHeight || 130;
     var floats = all('[data-float]', sec);
     var ch = cardsWrap.offsetHeight || 400;
     var GAP = 36;
@@ -205,6 +207,17 @@
     });
     gsap.set(cards, { autoAlpha: 1, yPercent: 0 });
     gsap.set(link, { position: 'absolute', left: 0, right: 0, marginTop: 0, top: 'calc(50% + ' + (ch / 2 + GAP) + 'px)' });
+    if (list) {
+      gsap.set(list, {
+        position: 'absolute',
+        left: 0,
+        right: 0,
+        marginLeft: 'auto',
+        marginRight: 'auto',
+        marginTop: 0,
+        top: 'calc(50% + ' + (ch / 2 + GAP + linkH) + 'px)'
+      });
+    }
     gsap.set(chips, { autoAlpha: 0, y: 40, yPercent: 0 });
     if (dot) gsap.set(dot, { scale: 0 });
     if (wire) gsap.set(wire, { scaleY: 0, transformOrigin: 'center top' });
@@ -274,12 +287,12 @@
       tl.to(chip, { autoAlpha: 1, y: 0, duration: 0.6, ease: 'power2.out' }, chipTimes[i] || 10.8 + i * 0.7);
     });
     tl.to(
-      [cardsWrap, link],
+      list ? [cardsWrap, link, list] : [cardsWrap, link],
       {
         y: function () {
           var h = vh();
-          var group = ch + GAP + link.offsetHeight;
-          return h - 70 - group - (h / 2 - ch / 2);
+          var group = ch + GAP + linkH + (list ? list.offsetHeight : 0);
+          return Math.min(0, h - 50 - group - (h / 2 - ch / 2));
         },
         duration: 2.4,
         ease: 'power1.inOut'
