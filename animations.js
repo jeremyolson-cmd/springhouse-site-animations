@@ -218,7 +218,7 @@
         top: 'calc(50% + ' + (ch / 2 + GAP + linkH) + 'px)'
       });
     }
-    gsap.set(chips, { autoAlpha: 0, y: 40, yPercent: 0 });
+    gsap.set(chips, { autoAlpha: 0, y: 180, scale: 0.9, yPercent: 0 });
     if (dot) gsap.set(dot, { scale: 0 });
     if (wire) gsap.set(wire, { scaleY: 0, transformOrigin: 'center top' });
 
@@ -282,9 +282,9 @@
     // scene 5: dot, wire, chips; the group rises so the chips fit
     if (dot) tl.to(dot, { scale: 1, duration: 0.4, ease: 'back.out(2)' }, 8.5);
     if (wire) tl.to(wire, { scaleY: 1, duration: 0.7 }, 8.7);
-    var chipTimes = [9.3, 10.0, 10.8];
+    var chipTimes = [9.2, 9.9, 10.6];
     chips.forEach(function (chip, i) {
-      tl.to(chip, { autoAlpha: 1, y: 0, duration: 0.6, ease: 'power2.out' }, chipTimes[i] || 10.8 + i * 0.7);
+      tl.to(chip, { autoAlpha: 1, y: 0, scale: 1, duration: 1.2, ease: 'power3.out' }, chipTimes[i] || 10.6 + i * 0.7);
     });
     // everything shrinks into one stack that fits the viewport: cards, wire, chips below
     var stack = list ? [cardsWrap, link, list] : [cardsWrap, link];
