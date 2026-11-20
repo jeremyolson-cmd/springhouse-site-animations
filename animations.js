@@ -36,6 +36,8 @@
       : { trigger: el, start: onceStart, once: true };
   }
 
+  var FLOAT_SCALE = 2.2; // multiplies every data-float-w
+
   function num(v, fallback) {
     var n = parseFloat(v);
     return isNaN(n) ? fallback : n;
@@ -148,9 +150,153 @@
     };
   }
 
+  /* Pinned multi-scene sequence: <section data-stage> with these roles inside it:
+   *   data-stage-el="head"   title and subtitle (first = title, second = subtitle)
+   *   data-stage-el="cards"  row of [data-fan] cards
+   *   data-stage-el="link"   dot, [data-draw] wire and the [data-reveal="rise"] chips
+   *   [data-float] images     drift through the whole sequence (data-float-x / -w / -r as usual)
+   * Scenes: 1 head holds while food drifts behind, 2 head exits, 3 cards arrive and hold while the
+   * food keeps moving, 4 cards fan, 5 dot and wire draw, chips stack and the group rises.
+   * Layout is applied with gsap.set, so leaving desktop (matchMedia revert) restores the normal flow. */
+  function buildStage(sec) {
+    var heads = all('[data-stage-el="head"]', sec);
+    var cardsWrap = sec.querySelector('[data-stage-el="cards"]');
+    var link = sec.querySelector('[data-stage-el="link"]');
+    if (!heads.length || !cardsWrap || !link) return;
+
+    var title = heads[0];
+    var sub = heads[1];
+    var cards = all('[data-fan]', cardsWrap);
+    var dot = link.querySelector('.v2-sm-dot');
+    var wire = link.querySelector('[data-draw]');
+    var chips = all('[data-reveal="rise"]', link);
+    var floats = all('[data-float]', sec);
+    var ch = cardsWrap.offsetHeight || 400;
+    var GAP = 36;
+
+    function vh() {
+      return window.innerHeight;
+    }
+
+    gsap.set(sec, { height: '100vh', minHeight: 0, paddingTop: 0, paddingBottom: 0 });
+    gsap.set(title, { position: 'absolute', left: 0, right: 0, top: 'calc(50% - 110px)', margin: 0, autoAlpha: 1 });
+    if (sub) {
+      gsap.set(sub, {
+        position: 'absolute',
+        left: 0,
+        right: 0,
+        marginLeft: 'auto',
+        marginRight: 'auto',
+        marginTop: 0,
+        marginBottom: 0,
+        top: 'calc(50% - 20px)',
+        autoAlpha: 1
+      });
+    }
+    gsap.set(cardsWrap, {
+      position: 'absolute',
+      left: 0,
+      right: 0,
+      marginLeft: 'auto',
+      marginRight: 'auto',
+      marginTop: 0,
+      top: 'calc(50% - ' + ch / 2 + 'px)',
+      autoAlpha: 0
+    });
+    gsap.set(cards, { autoAlpha: 1, yPercent: 0 });
+    gsap.set(link, { position: 'absolute', left: 0, right: 0, marginTop: 0, top: 'calc(50% + ' + (ch / 2 + GAP) + 'px)' });
+    gsap.set(chips, { autoAlpha: 0, y: 40, yPercent: 0 });
+    if (dot) gsap.set(dot, { scale: 0 });
+    if (wire) gsap.set(wire, { scaleY: 0, transformOrigin: 'center top' });
+
+    var T = 13;
+    var tl = gsap.timeline({
+      defaults: { ease: 'none' },
+      scrollTrigger: {
+        trigger: sec,
+        start: 'top top',
+        end: function () {
+          return '+=' + Math.round(vh() * 4.6);
+        },
+        pin: true,
+        anticipatePin: 1,
+        scrub: 0.6,
+        invalidateOnRefresh: true
+      }
+    });
+
+    // food drifting behind everything, staggered so there is always some on screen
+    floats.forEach(function (el, i) {
+      var sp = num(el.getAttribute('data-float'), 1);
+      var w = num(el.getAttribute('data-float-w'), 100) * FLOAT_SCALE;
+      var r0 = num(el.getAttribute('data-float-r'), 0);
+      var spin = (i % 2 ? 1 : -1) * 40 * sp;
+      var start = (i * 0.8) % 6;
+      gsap.set(el, { left: num(el.getAttribute('data-float-x'), 50) + '%', width: w, xPercent: -50, autoAlpha: 1 });
+      tl.fromTo(
+        el,
+        { y: -w * 1.3, rotation: r0 },
+        {
+          y: function () {
+            return (vh() + w) * (0.55 + 0.5 * sp);
+          },
+          rotation: r0 + spin,
+          duration: T - start
+        },
+        start
+      );
+    });
+
+    // scene 2: header and subheader leave
+    tl.to(title, { y: function () { return -vh() * 0.65; }, autoAlpha: 0, duration: 1.1, ease: 'power2.in' }, 3.4);
+    if (sub) tl.to(sub, { y: function () { return -vh() * 0.65; }, autoAlpha: 0, duration: 1.1, ease: 'power2.in' }, 3.55);
+
+    // scene 3: cards arrive, then hold while the food keeps moving
+    tl.fromTo(
+      cardsWrap,
+      { autoAlpha: 0, y: function () { return vh() * 0.5; } },
+      { autoAlpha: 1, y: 0, duration: 1.3, ease: 'power2.out' },
+      4.2
+    );
+
+    // scene 4: fan
+    cards.forEach(function (card) {
+      var p = card.getAttribute('data-fan').split(',').map(parseFloat);
+      if (!isNaN(p[3])) gsap.set(card, { zIndex: p[3] });
+      tl.to(card, { rotation: p[0] || 0, xPercent: p[1] || 0, scale: p[2] || 1, duration: 1.4, ease: 'power2.inOut' }, 7.0);
+    });
+
+    // scene 5: dot, wire, chips; the group rises so the chips fit
+    if (dot) tl.to(dot, { scale: 1, duration: 0.4, ease: 'back.out(2)' }, 8.5);
+    if (wire) tl.to(wire, { scaleY: 1, duration: 0.7 }, 8.7);
+    var chipTimes = [9.3, 10.0, 10.8];
+    chips.forEach(function (chip, i) {
+      tl.to(chip, { autoAlpha: 1, y: 0, duration: 0.6, ease: 'power2.out' }, chipTimes[i] || 10.8 + i * 0.7);
+    });
+    tl.to(
+      [cardsWrap, link],
+      {
+        y: function () {
+          var h = vh();
+          var group = ch + GAP + link.offsetHeight;
+          return h - 70 - group - (h / 2 - ch / 2);
+        },
+        duration: 2.4,
+        ease: 'power1.inOut'
+      },
+      9.6
+    );
+    tl.to({}, { duration: 0.1 }, T - 0.1);
+  }
+
   function init(conditions) {
     var motion = conditions.motion;
     var wide = conditions.wide;
+    // [data-stage] sections become one pinned, choreographed sequence on desktop (see buildStage).
+    var stageEl = wide && window.innerHeight >= 620 ? document.querySelector('[data-stage]') : null;
+    function inStage(el) {
+      return !!(stageEl && stageEl.contains(el));
+    }
 
     if (!motion) {
       gsap.set('[data-reveal]', { autoAlpha: 1 });
@@ -162,6 +308,7 @@
 
     // lines (headings)
     all('[data-reveal="lines"]').forEach(function (el) {
+      if (inStage(el)) return;
       if (!hasSplit) {
         gsap.fromTo(
           el,
@@ -195,6 +342,7 @@
 
     // fade
     all('[data-reveal="fade"]').forEach(function (el) {
+      if (inStage(el)) return;
       gsap.fromTo(
         el,
         { autoAlpha: 0, y: 16 },
@@ -211,6 +359,7 @@
     // rise (uses yPercent so it never fights data-parallax, which uses y)
     // data-scrub items slide up from below in step with the scroll (e.g. the inventory chips).
     all('[data-reveal="rise"][data-scrub]').forEach(function (el) {
+      if (inStage(el)) return;
       gsap.fromTo(
         el,
         { autoAlpha: 0, yPercent: 70 },
@@ -223,7 +372,9 @@
       );
     });
 
-    var rise = all('[data-reveal="rise"]:not([data-scrub])');
+    var rise = all('[data-reveal="rise"]:not([data-scrub])').filter(function (el) {
+      return !inStage(el);
+    });
     if (rise.length) {
       gsap.set(rise, { autoAlpha: 0, yPercent: 8 });
       ScrollTrigger.batch(rise, {
@@ -263,7 +414,7 @@
 
     all('[data-parallax]').forEach(function (el) {
       var f = num(el.getAttribute('data-parallax'), 0);
-      if (!f) return;
+      if (!f || inStage(el)) return;
       var k = wide ? 1 : 0.5;
       var trigger = el.closest('section') || el.parentElement || el;
       gsap.fromTo(
@@ -295,8 +446,9 @@
      * motion simply never shows them. */
 
     all('[data-float]').forEach(function (el, i) {
+      if (inStage(el)) return;
       var sp = num(el.getAttribute('data-float'), 1);
-      var w = num(el.getAttribute('data-float-w'), 100) * (wide ? 1 : 0.6);
+      var w = num(el.getAttribute('data-float-w'), 100) * FLOAT_SCALE * (wide ? 1 : 0.6);
       var r0 = num(el.getAttribute('data-float-r'), 0);
       var spin = (i % 2 ? 1 : -1) * 30 * sp;
       var trigger = el.closest('section') || el.parentElement;
@@ -325,6 +477,7 @@
      * Cards start flat and spread into an overlapping fan as the row scrolls into view. */
 
     all('[data-fan]').forEach(function (el) {
+      if (inStage(el)) return;
       var p = el.getAttribute('data-fan').split(',').map(parseFloat);
       var k = wide ? 1 : 0.5;
       if (!isNaN(p[3])) gsap.set(el, { zIndex: p[3] });
@@ -370,9 +523,13 @@
     // Created before the slider so the pin spacing is in place when later triggers measure.
     var stopVideos = scrubVideos(true, wide);
 
+    // Created after the video pin so spacing is measured in page order.
+    if (stageEl) buildStage(stageEl);
+
     /* ---------- draw ---------- */
 
     all('[data-draw]').forEach(function (el) {
+      if (inStage(el)) return;
       var tag = el.tagName.toLowerCase();
       var st = { trigger: el, start: 'top 85%', end: 'bottom 55%', scrub: true };
       if (tag === 'path' || tag === 'line' || tag === 'polyline' || tag === 'circle') {
