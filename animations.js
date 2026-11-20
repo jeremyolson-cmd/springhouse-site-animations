@@ -222,14 +222,14 @@
     if (dot) gsap.set(dot, { scale: 0 });
     if (wire) gsap.set(wire, { scaleY: 0, transformOrigin: 'center top' });
 
-    var T = 15;
+    var T = 17.5;
     var tl = gsap.timeline({
       defaults: { ease: 'none' },
       scrollTrigger: {
         trigger: sec,
         start: 'top top',
         end: function () {
-          return '+=' + Math.round(vh() * 5.3);
+          return '+=' + Math.round(vh() * 6.2);
         },
         pin: true,
         anticipatePin: 1,
@@ -282,7 +282,7 @@
     if (wire) tl.to(wire, { scaleY: 1, duration: 0.7 }, 8.7);
     // chips: one at a time, each rises from below the screen and settles at full size
     // before the next starts; the stack steps up so each new chip has room
-    var chipTimes = [8.6, 10.4, 12.2];
+    var chipTimes = [9.4, 12.2, 15.0];
     var CHIP_DUR = 1.3;
     var stack = list ? [cardsWrap, link, list] : [cardsWrap, link];
     function finalShift() {
@@ -291,23 +291,25 @@
       return Math.min(0, h - 50 - H - (h / 2 - ch / 2));
     }
     chips.forEach(function (chip, i) {
-      var at = chipTimes[i] !== undefined ? chipTimes[i] : 12.2 + (i - 2) * 1.8;
-      tl.fromTo(
-        chip,
-        { y: function () { return vh() * 1.1; }, autoAlpha: 0 },
-        { y: 0, autoAlpha: 1, duration: CHIP_DUR, ease: 'power2.out' },
-        at
-      );
+      var at = chipTimes[i] !== undefined ? chipTimes[i] : 15.0 + (i - 2) * 2.8;
       var frac = (i + 1) / chips.length;
+      // 1) the stack steps up while the previous chip sits still
       tl.to(
         stack,
         {
           y: function () {
             return finalShift() * frac;
           },
-          duration: CHIP_DUR,
+          duration: 0.9,
           ease: 'power2.inOut'
         },
+        at - 1.0
+      );
+      // 2) this chip rises from below the screen into its place; nothing else moves
+      tl.fromTo(
+        chip,
+        { y: function () { return vh() * 1.1; }, autoAlpha: 0 },
+        { y: 0, autoAlpha: 1, duration: CHIP_DUR, ease: 'power2.out' },
         at
       );
     });
