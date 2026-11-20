@@ -1,0 +1,11 @@
+<!-- Page head code. Hides [data-reveal] until GSAP is ready; falls back after 3s so content never stays hidden if the CDN fails. -->
+<script>
+  (function () {
+    var r = document.documentElement;
+    r.classList.add('v2-js');
+    setTimeout(function () { r.classList.remove('v2-js'); }, 3000);
+  })();
+</script>
+<style>
+  .v2-js [data-reveal] { visibility: hidden; }
+</style>
