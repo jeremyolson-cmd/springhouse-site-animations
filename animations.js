@@ -642,6 +642,49 @@
     return stopVideos;
   }
 
+  /* Even scroll feel: smooth wheel scrolling (Lenis) that runs at SLOW_SCROLL of normal speed while the
+   * page is in free-scrolling sections, and at full speed inside pinned sequences (videos, stages), so
+   * static sections no longer fly past compared with the animated ones. Desktop wheel only. */
+  var SLOW_SCROLL = 0.6;
+  function smoothScroll() {
+    var lenis;
+    var rafFn;
+    var dead = false;
+
+    function boot() {
+      if (dead || lenis || !window.Lenis) return;
+      lenis = new window.Lenis({ lerp: 0.09, smoothWheel: true });
+      lenis.on('scroll', function () {
+        ScrollTrigger.update();
+        var pinned = ScrollTrigger.getAll().some(function (st) {
+          return st.pin && st.isActive;
+        });
+        lenis.options.wheelMultiplier = pinned ? 1 : SLOW_SCROLL;
+      });
+      lenis.options.wheelMultiplier = SLOW_SCROLL;
+      rafFn = function (time) {
+        lenis.raf(time * 1000);
+      };
+      gsap.ticker.add(rafFn);
+      gsap.ticker.lagSmoothing(0);
+    }
+
+    if (window.Lenis) boot();
+    else {
+      var sc = document.createElement('script');
+      sc.src = 'https://cdn.jsdelivr.net/npm/lenis@1.1.20/dist/lenis.min.js';
+      sc.onload = boot;
+      document.head.appendChild(sc);
+    }
+
+    return function () {
+      dead = true;
+      if (rafFn) gsap.ticker.remove(rafFn);
+      if (lenis) lenis.destroy();
+      lenis = null;
+    };
+  }
+
   var mm = gsap.matchMedia();
   mm.add(
     {
@@ -650,8 +693,12 @@
     },
     function (ctx) {
       var cleanup = init(ctx.conditions);
+      var stopSmooth = ctx.conditions.motion && ctx.conditions.wide ? smoothScroll() : null;
       release();
-      return cleanup;
+      return function () {
+        if (cleanup) cleanup();
+        if (stopSmooth) stopSmooth();
+      };
     }
   );
 
