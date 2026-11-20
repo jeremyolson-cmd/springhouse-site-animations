@@ -11,6 +11,7 @@ Scroll animations for the Springhouse marketing site (Webflow). GSAP, ScrollTrig
 | `data-mask` | `ellipse` | Scrubbed ellipse clip-path expand. |
 | `data-draw` | `true` | SVG stroke draw, or a div grows along its long axis. |
 | `data-clip` | any | Wipe inside the pinned slider, desktop only. |
+| `data-scrub-video` | `<video>` | Scroll drives playback (forward down, reverse up). Desktop pins the section for 1.5 viewports; smaller screens scrub while passing; reduced motion shows the last frame. Encode with every frame a keyframe: `ffmpeg -i in.mp4 -an -c:v libx264 -g 1 -crf 24 -pix_fmt yuv420p -movflags +faststart out.mp4`. |
 | `data-slider` | `pin` | Owned by the vanilla slider script in the Refrigerator footer. Not touched here. |
 
 Reveals use `yPercent` and parallax uses `y`, so both can sit on one element.

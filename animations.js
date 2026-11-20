@@ -1,6 +1,6 @@
 /*! springhouse-site-animations v0.1.0
  * GSAP + ScrollTrigger (+ SplitText) driven by data-* hooks on v2-* elements.
- * Hooks: data-parallax, data-reveal (lines|fade|rise|pop), data-mask, data-draw, data-clip.
+ * Hooks: data-parallax, data-reveal (lines|fade|rise|pop), data-mask, data-draw, data-clip, data-scrub-video.
  * data-slider="pin" is owned by the vanilla slider script on the Refrigerator page; this file only
  * adds the data-clip wipes inside it and never touches slide transforms.
  */
@@ -34,6 +34,104 @@
     return isNaN(n) ? fallback : n;
   }
 
+  /* Scroll-scrubbed video: <video data-scrub-video>. Scroll position drives currentTime,
+   * so scrolling down plays forward and scrolling up plays in reverse. The file must be encoded
+   * with every frame a keyframe (ffmpeg -g 1) or reverse seeking will stutter.
+   * wide: the host section pins for 1.5 viewports of scroll. Otherwise it scrubs while passing.
+   * Reduced motion: no scrub, shows the final frame. */
+  function scrubVideos(motion, wide) {
+    var cleanups = [];
+
+    all('video[data-scrub-video]').forEach(function (v) {
+      var host = v.closest('section') || v.parentElement;
+      v.muted = true;
+      v.pause();
+
+      var started = false;
+      var target = 0;
+      var current = 0;
+      var tick;
+      var st;
+
+      function show() {
+        v.style.opacity = '1';
+      }
+
+      function start() {
+        if (started || !v.duration) return;
+        started = true;
+
+        if (!motion) {
+          v.currentTime = Math.max(0, v.duration - 0.05);
+          show();
+          return;
+        }
+
+        // iOS only decodes a paused video after it has played once.
+        var p = v.play();
+        if (p && p.then) {
+          p.then(function () {
+            v.pause();
+            v.currentTime = current;
+          }).catch(function () {});
+        }
+
+        tick = function () {
+          var d = target - current;
+          if (Math.abs(d) < 0.002) return;
+          current += d * 0.2;
+          if (!v.seeking) v.currentTime = current;
+        };
+        gsap.ticker.add(tick);
+
+        st = ScrollTrigger.create(
+          wide
+            ? {
+                trigger: host,
+                // Pin when the section fills the viewport: bottom-aligned on tall screens, top-aligned on short ones.
+                start: function () {
+                  return window.innerHeight >= host.offsetHeight ? 'bottom bottom' : 'top top';
+                },
+                end: function () {
+                  return '+=' + Math.round(window.innerHeight * 1.5);
+                },
+                pin: true,
+                anticipatePin: 1,
+                refreshPriority: 1,
+                invalidateOnRefresh: true,
+                onUpdate: function (self) {
+                  target = self.progress * v.duration;
+                }
+              }
+            : {
+                trigger: host,
+                start: 'top 70%',
+                end: 'bottom 40%',
+                onUpdate: function (self) {
+                  target = self.progress * v.duration;
+                }
+              }
+        );
+        show();
+      }
+
+      if (v.readyState >= 1) start();
+      else v.addEventListener('loadedmetadata', start, { once: true });
+
+      cleanups.push(function () {
+        if (tick) gsap.ticker.remove(tick);
+        if (st) st.kill();
+        v.style.opacity = '';
+      });
+    });
+
+    return function () {
+      cleanups.forEach(function (fn) {
+        fn();
+      });
+    };
+  }
+
   function init(conditions) {
     var motion = conditions.motion;
     var wide = conditions.wide;
@@ -41,7 +139,7 @@
     if (!motion) {
       gsap.set('[data-reveal]', { autoAlpha: 1 });
       release();
-      return;
+      return scrubVideos(false, wide);
     }
 
     /* ---------- reveals ---------- */
@@ -180,6 +278,11 @@
       );
     });
 
+    /* ---------- scrubbed video ---------- */
+
+    // Created before the slider so the pin spacing is in place when later triggers measure.
+    var stopVideos = scrubVideos(true, wide);
+
     /* ---------- draw ---------- */
 
     all('[data-draw]').forEach(function (el) {
@@ -234,12 +337,14 @@
           onRefresh: update
         });
         return function () {
+          stopVideos();
           medias.forEach(function (m) {
             if (m) m.style.clipPath = '';
           });
         };
       }
     }
+    return stopVideos;
   }
 
   var mm = gsap.matchMedia();
