@@ -1,6 +1,6 @@
 /*! springhouse-site-animations v0.1.0
  * GSAP + ScrollTrigger (+ SplitText) driven by data-* hooks on v2-* elements.
- * Hooks: data-parallax, data-reveal (lines|fade|rise|pop), data-mask, data-draw, data-clip, data-scrub-video.
+ * Hooks: data-parallax, data-float, data-fan, data-reveal (lines|fade|rise|pop), data-mask, data-draw, data-clip, data-scrub-video.
  * data-slider="pin" is owned by the vanilla slider script on the Refrigerator page; this file only
  * adds the data-clip wipes inside it and never touches slide transforms.
  */
@@ -217,7 +217,7 @@
             duration: 0.8,
             ease: 'power3.out',
             stagger: 0.1,
-            overwrite: true
+            overwrite: 'auto'
           });
         }
       });
@@ -263,6 +263,63 @@
             end: 'bottom top',
             scrub: true,
             invalidateOnRefresh: true
+          }
+        }
+      );
+    });
+
+    /* ---------- floaters: <img data-float="speed" data-float-x="%" data-float-w="px" data-float-r="deg"> ----------
+     * Absolutely positioned decorations that drift down through their section at different speeds
+     * (higher speed = faster and deeper) while rotating. Hidden by CSS until this runs, so reduced
+     * motion simply never shows them. */
+
+    all('[data-float]').forEach(function (el, i) {
+      var sp = num(el.getAttribute('data-float'), 1);
+      var w = num(el.getAttribute('data-float-w'), 100) * (wide ? 1 : 0.6);
+      var r0 = num(el.getAttribute('data-float-r'), 0);
+      var spin = (i % 2 ? 1 : -1) * 30 * sp;
+      var trigger = el.closest('section') || el.parentElement;
+      gsap.set(el, { left: num(el.getAttribute('data-float-x'), 50) + '%', width: w, xPercent: -50, autoAlpha: 1 });
+      gsap.fromTo(
+        el,
+        { y: -w * 1.2, rotation: r0 },
+        {
+          y: function () {
+            return trigger.offsetHeight * 0.9 * sp;
+          },
+          rotation: r0 + spin,
+          ease: 'none',
+          scrollTrigger: {
+            trigger: trigger,
+            start: 'top bottom',
+            end: 'bottom top',
+            scrub: true,
+            invalidateOnRefresh: true
+          }
+        }
+      );
+    });
+
+    /* ---------- fan: data-fan="rotateDeg,xPercent,scale,zIndex" ----------
+     * Cards start flat and spread into an overlapping fan as the row scrolls into view. */
+
+    all('[data-fan]').forEach(function (el) {
+      var p = el.getAttribute('data-fan').split(',').map(parseFloat);
+      var k = wide ? 1 : 0.5;
+      if (!isNaN(p[3])) gsap.set(el, { zIndex: p[3] });
+      gsap.fromTo(
+        el,
+        { rotation: 0, xPercent: 0, scale: 1 },
+        {
+          rotation: (p[0] || 0) * k,
+          xPercent: wide ? p[1] || 0 : 0,
+          scale: 1 + ((p[2] || 1) - 1) * k,
+          ease: 'none',
+          scrollTrigger: {
+            trigger: el.parentElement,
+            start: 'top 85%',
+            end: 'top 30%',
+            scrub: true
           }
         }
       );
