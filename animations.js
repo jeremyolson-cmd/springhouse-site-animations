@@ -290,12 +290,10 @@
       );
     });
 
-    // scene 4: a gentle tilt once all three are in (no overlap)
-    var tilts = [-5, 0, 5];
-    cards.forEach(function (card, i) {
+    // scene 4: no tilt; the cards stay level once they have arrived
+    cards.forEach(function (card) {
       var p = card.getAttribute('data-fan').split(',').map(parseFloat);
       if (!isNaN(p[3])) gsap.set(card, { zIndex: p[3] });
-      tl.to(card, { rotation: tilts[i] !== undefined ? tilts[i] : 0, duration: 1.2, ease: 'power2.inOut' }, 7.0 + SHIFT);
     });
 
     // scene 5: dot, wire, chips; the group rises so the chips fit
